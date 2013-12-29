@@ -41,12 +41,13 @@ iso/boot/isolinux/isolinux.cfg: isolinux.cfg
 	cp $< $@
 
 QEMU = qemu-system-i386
+QFLAGS = -soundhw pcspk
 
 qemu: tetris.elf
-	$(QEMU) -kernel $<
+	$(QEMU) $(QFLAGS) -kernel $<
 
 qemu-iso: tetris.iso
-	$(QEMU) -cdrom $<
+	$(QEMU) $(QFLAGS) -cdrom $<
 
 clean:
 	rm -rf tetris.elf entry.o tetris.o iso

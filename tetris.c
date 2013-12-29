@@ -65,6 +65,8 @@ u64 tps(void)
 
 enum timer {
     TIMER_BLINK,
+    TIMER_BEEP,
+    TIMER_BOOP,
     TIMER__LENGTH
 };
 
@@ -148,6 +150,26 @@ u8 scan(void)
     else return 0;
 }
 
+/* PC Speaker */
+
+void pcspk_freq(u32 freq)
+{
+    u32 div = 1193180 / freq;
+    outb(0x43, 0xB6);
+    outb(0x42, (u8) div);
+    outb(0x42, (u8) (div >> 8));
+}
+
+void pcspk_on(void)
+{
+    outb(0x61, inb(0x61) | 0x3);
+}
+
+void pcspk_off(void)
+{
+    outb(0x61, inb(0x61) & 0xFC);
+}
+
 /* Formatting */
 
 char *itoa(u32 n, u8 r, u8 w)
@@ -170,9 +192,11 @@ noreturn main()
     puts(0, 0, BRIGHT | GREEN, BLACK, "Hello, World!");
     puts(0, 1, GREEN, BLACK, itoa((u32) &main, 16, 8));
 
-    u32 tpms;
+    u64 tpms;
     bool blink = false;
     u8 key, x = 40, y = 13;
+    bool beep = false;
+    u32 boop = 1000;
 loop:
     tpms = (u32) tps() / 1000;
 
@@ -192,8 +216,21 @@ loop:
         case KEY_DOWN:  y++; break;
         case KEY_LEFT:  x--; break;
         case KEY_RIGHT: x++; break;
+        case KEY_SPACE: beep = true; pcspk_on(); break;
         }
         putc(x, y, BRIGHT | YELLOW, YELLOW, '@');
+    }
+
+    if (interval(TIMER_BOOP, tpms * 10)) {
+        if (boop == 1)
+            boop = 1000;
+        boop -= 1;
+        pcspk_freq(boop);
+    }
+
+    if (beep && wait(TIMER_BEEP, tpms * 1000)) {
+        pcspk_off();
+        beep = false;
     }
 
     goto loop;
