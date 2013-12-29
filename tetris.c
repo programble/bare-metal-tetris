@@ -42,23 +42,23 @@ static inline u64 rdtsc(void)
 
 u8 rtcs(void)
 {
-    u8 last = 0, secs;
+    u8 last = 0, sec;
     do { /* until value is the same twice in a row */
         /* wait for update not in progress */
         do { outb(RTC_OUT, 0x0A); } while (inb(RTC_IN) & 0x80);
         outb(RTC_OUT, 0x00);
-        secs = inb(RTC_IN);
-    } while (secs != last && (last = secs));
-    return secs;
+        sec = inb(RTC_IN);
+    } while (sec != last && (last = sec));
+    return sec;
 }
 
 u64 tps(void)
 {
     static u64 ti = 0, dt = 0;
-    static u8 last_secs = 0xFF;
-    u8 secs = rtcs();
-    if (secs != last_secs) {
-        last_secs = secs;
+    static u8 last_sec = 0xFF;
+    u8 sec = rtcs();
+    if (sec != last_sec) {
+        last_sec = sec;
         u64 tf = rdtsc();
         dt = tf - ti;
         ti = tf;
