@@ -76,11 +76,23 @@ u64 timers[TIMER__LENGTH] = {0};
 bool interval(enum timer timer, u64 ticks)
 {
     u64 tf = rdtsc();
-    u64 dt = tf - timers[timer];
-    if (dt >= ticks) {
+    if (tf - timers[timer] >= ticks) {
         timers[timer] = tf;
         return true;
     } else return false;
+}
+
+bool wait(enum timer timer, u64 ticks)
+{
+    if (timers[timer]) {
+        if (rdtsc() - timers[timer] >= ticks) {
+            timers[timer] = 0;
+            return true;
+        } else return false;
+    } else {
+        timers[timer] = rdtsc();
+        return false;
+    }
 }
 
 /* Video Output */
