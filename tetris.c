@@ -37,17 +37,14 @@ static inline u64 rdtsc(void)
     return ((u64) lo) | (((u64) hi) << 32);
 }
 
-#define RTC_OUT (0x70)
-#define RTC_IN  (0x71)
-
 u8 rtcs(void)
 {
     u8 last = 0, sec;
     do { /* until value is the same twice in a row */
         /* wait for update not in progress */
-        do { outb(RTC_OUT, 0x0A); } while (inb(RTC_IN) & 0x80);
-        outb(RTC_OUT, 0x00);
-        sec = inb(RTC_IN);
+        do { outb(0x70, 0x0A); } while (inb(0x71) & 0x80);
+        outb(0x70, 0x00);
+        sec = inb(0x71);
     } while (sec != last && (last = sec));
     return sec;
 }
