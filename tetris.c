@@ -66,7 +66,6 @@ u64 tps(void)
 enum timer {
     TIMER_BLINK,
     TIMER_BEEP,
-    TIMER_BOOP,
     TIMER__LENGTH
 };
 
@@ -134,6 +133,7 @@ void clear(enum color bg)
 
 /* Keyboard Input */
 
+#define KEY_D     (0x20)
 #define KEY_UP    (0x48)
 #define KEY_DOWN  (0x50)
 #define KEY_LEFT  (0x4B)
@@ -189,49 +189,62 @@ char *itoa(u32 n, u8 r, u8 w)
 noreturn main()
 {
     clear(BLACK);
-    puts(0, 0, BRIGHT | GREEN, BLACK, "Hello, World!");
-    puts(0, 1, GREEN, BLACK, itoa((u32) &main, 16, 8));
+    pcspk_freq(200);
 
+    bool debug = false;
     u64 tpms;
-    bool blink = false;
-    u8 key, x = 40, y = 13;
+    u8 x = COLS / 2, y = ROWS / 2, color = YELLOW;
     bool beep = false;
-    u32 boop = 1000;
 loop:
     tpms = (u32) tps() / 1000;
 
-    puts(0, 2, YELLOW, BLACK, itoa(rtcs(), 16, 2));
-    puts(3, 2, YELLOW, BLACK, itoa(tpms, 10, 10));
+    if (debug) {
+        puts(0, 0, BRIGHT | GREEN, BLACK, "RTC sec:");
+        puts(10, 0, GREEN, BLACK, itoa(rtcs(), 16, 2));
+        puts(0, 1, BRIGHT | GREEN, BLACK, "ticks/ms:");
+        puts(10, 1, GREEN, BLACK, itoa(tpms, 10, 10));
+        puts(0, 2, BRIGHT | GREEN, BLACK, "timers:");
+        u32 i;
+        for (i = 0; i < TIMER__LENGTH; i++)
+            puts(10 + i * 11, 2, GREEN, BLACK, itoa(timers[i], 10, 10));
+    }
 
     if (interval(TIMER_BLINK, tpms * 500))
-        blink = !blink;
-    puts(0, 3, blink ? MAGENTA : BLACK, blink ? BLACK : MAGENTA, "blink");
+        color ^= BRIGHT;
 
-    if ((key = scan())) {
-        puts(0, 4, RED, BLACK, itoa(key, 16, 2));
-
-        putc(x, y, BLACK, BLACK, '@');
-        switch (key) {
-        case KEY_UP:    y--; break;
-        case KEY_DOWN:  y++; break;
-        case KEY_LEFT:  x--; break;
-        case KEY_RIGHT: x++; break;
-        case KEY_SPACE: beep = true; pcspk_on(); break;
-        }
-        putc(x, y, BRIGHT | YELLOW, YELLOW, '@');
-    }
-
-    if (interval(TIMER_BOOP, tpms * 10)) {
-        if (boop == 1)
-            boop = 1000;
-        boop -= 1;
-        pcspk_freq(boop);
-    }
-
-    if (beep && wait(TIMER_BEEP, tpms * 1000)) {
+    if (beep && wait(TIMER_BEEP, tpms * 100)) {
         pcspk_off();
         beep = false;
     }
+
+    u8 key;
+    if ((key = scan())) {
+        if (debug) {
+            puts(0, 3, BRIGHT | GREEN, BLACK, "key:");
+            puts(10, 3, GREEN, BLACK, itoa(key, 16, 2));
+        }
+
+        putc(x, y, BLACK, BLACK, ' ');
+        switch(key) {
+        case KEY_D:
+            debug = !debug;
+            clear(BLACK);
+            break;
+        case KEY_UP: y--; break;
+        case KEY_DOWN: y++; break;
+        case KEY_LEFT: x--; break;
+        case KEY_RIGHT: x++; break;
+        }
+    }
+
+    if (x >= COLS || y >= ROWS) {
+        beep = true;
+        pcspk_on();
+        x = COLS / 2;
+        y = ROWS / 2;
+    }
+
+    putc(x, y, color, BLACK, '*');
 
     goto loop;
 }
