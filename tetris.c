@@ -75,6 +75,7 @@ u64 tps(void)
 }
 
 enum timer {
+    TIMER_UPDATE,
     TIMER__LENGTH
 };
 
@@ -374,12 +375,13 @@ void ghost(void)
     current.g = y - 1;
 }
 
-void move(s8 dx, s8 dy)
+bool move(s8 dx, s8 dy)
 {
     if (collide(current.i, current.r, current.x + dx, current.y + dy))
-        return;
+        return false;
     current.x += dx;
     current.y += dy;
+    return true;
 }
 
 void rotate(void)
@@ -398,6 +400,21 @@ void lock(void)
             if (TETRIS[current.i][current.r][y][x])
                 well[current.y + y][current.x + x] =
                     TETRIS[current.i][current.r][y][x];
+}
+
+void drop(void)
+{
+    current.y = current.g;
+    lock();
+    spawn();
+}
+
+void update(void)
+{
+    if (!move(0, 1)) {
+        lock();
+        spawn();
+    }
 }
 
 void draw(void)
@@ -500,10 +517,14 @@ loop:
             rotate();
             break;
         case KEY_ENTER:
-            lock();
-            spawn();
+            drop();
             break;
         }
+        updated = true;
+    }
+
+    if (interval(TIMER_UPDATE, tpms * 1000)) {
+        update();
         updated = true;
     }
 
