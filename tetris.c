@@ -435,7 +435,7 @@ noreturn main()
 
     bool debug = false;
     u64 tpms;
-    u8 key;
+    u8 last_key;
 loop:
     tpms = (u32) tps() / 1000;
 
@@ -445,7 +445,7 @@ loop:
         puts(0,  1, BRIGHT | GREEN, BLACK, "ticks/ms:");
         puts(10, 1, GREEN,          BLACK, itoa(tpms, 10, 10));
         puts(0,  2, BRIGHT | GREEN, BLACK, "key:");
-        puts(10, 2, GREEN,          BLACK, itoa(key, 16, 2));
+        puts(10, 2, GREEN,          BLACK, itoa(last_key, 16, 2));
         puts(0,  3, BRIGHT | GREEN, BLACK, "i,r:");
         puts(10, 3, GREEN,          BLACK, itoa(current.i, 10, 1));
         putc(11, 3, GREEN,          BLACK, ',');
@@ -465,7 +465,9 @@ loop:
 
     bool updated = false;
 
+    u8 key;
     if ((key = scan())) {
+        last_key = key;
         switch(key) {
         case KEY_D:
             debug = !debug;
