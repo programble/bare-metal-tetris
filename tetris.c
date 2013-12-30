@@ -66,7 +66,6 @@ u64 tps(void)
 enum timer {
     TIMER_BLINK,
     TIMER_BEEP,
-    TIMER_RAND,
     TIMER__LENGTH
 };
 
@@ -229,9 +228,6 @@ loop:
         beep = false;
     }
 
-    if (interval(TIMER_RAND, tpms * 1000))
-        random = rand(7);
-
     u8 key;
     if ((key = scan())) {
         if (debug) {
@@ -245,6 +241,7 @@ loop:
             debug = !debug;
             clear(BLACK);
             break;
+        case KEY_SPACE: random = rand(7); break;
         case KEY_UP: y--; break;
         case KEY_DOWN: y++; break;
         case KEY_LEFT: x--; break;
