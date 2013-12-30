@@ -402,19 +402,33 @@ void lock(void)
                     TETRIS[current.i][current.r][y][x];
 }
 
-void drop(void)
-{
-    current.y = current.g;
-    lock();
-    spawn();
-}
-
 void update(void)
 {
+    /* Gravity */
     if (!move(0, 1)) {
         lock();
         spawn();
     }
+
+    /* Row clearing */
+    u8 x, y, a, yy;
+    for (y = 0; y < WELL_HEIGHT; y++) {
+        for (a = 0, x = 0; x < WELL_WIDTH; x++)
+            if (well[y][x])
+                a++;
+        if (a != WELL_WIDTH)
+            continue;
+
+        for (yy = y; yy > 0; yy--)
+            for (x = 0; x < WELL_WIDTH; x++)
+                well[yy][x] = well[yy - 1][x];
+    }
+}
+
+void drop(void)
+{
+    current.y = current.g;
+    update();
 }
 
 void draw(void)
