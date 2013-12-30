@@ -64,8 +64,6 @@ u64 tps(void)
 }
 
 enum timer {
-    TIMER_BLINK,
-    TIMER_BEEP,
     TIMER__LENGTH
 };
 
@@ -324,70 +322,179 @@ u8 TETRIS[7][4][4][4] = {
     }
 };
 
+#define WELL_WIDTH (10)
+#define WELL_HEIGHT (22)
+#define WELL_X (COLS / 2 - WELL_WIDTH)
+u8 well[WELL_HEIGHT][WELL_WIDTH];
+
+struct {
+    u8 i, r;
+    s8 x, y, g;
+} current;
+
+bool collide(u8 i, u8 r, s8 x, s8 y)
+{
+    u8 xx, yy;
+    for (yy = 0; yy < 4; yy++)
+        for (xx = 0; xx < 4; xx++)
+            if (TETRIS[i][r][yy][xx])
+                if (x + xx < 0 || x + xx >= WELL_WIDTH ||
+                    y + yy < 0 || y + yy >= WELL_HEIGHT ||
+                    well[y + yy][x + xx])
+                        return true;
+    return false;
+}
+
+void spawn(void)
+{
+    current.i = rand(7);
+    current.r = 0;
+    current.x = WELL_WIDTH / 2 - 2;
+    current.y = 0;
+}
+
+void ghost(void)
+{
+    s8 y;
+    for (y = current.y; y < WELL_HEIGHT; y++)
+        if (collide(current.i, current.r, current.x, y))
+            break;
+    current.g = y - 1;
+}
+
+void move(s8 dx, s8 dy)
+{
+    if (collide(current.i, current.r, current.x + dx, current.y + dy))
+        return;
+    current.x += dx;
+    current.y += dy;
+}
+
+void rotate(void)
+{
+    u8 r = (current.r + 1) % 4;
+    if (collide(current.i, r, current.x, current.y))
+        return;
+    current.r = r;
+}
+
+void lock(void)
+{
+    u8 x, y;
+    for (y = 0; y < 4; y++)
+        for (x = 0; x < 4; x++)
+            if (TETRIS[current.i][current.r][y][x])
+                well[current.y + y][current.x + x] =
+                    TETRIS[current.i][current.r][y][x];
+}
+
+void draw(void)
+{
+    u8 x, y;
+
+    /* Border */
+    for (y = 2; y < WELL_HEIGHT; y++) {
+        putc(WELL_X - 1,            y, BLACK, GRAY, ' ');
+        putc(COLS / 2 + WELL_WIDTH, y, BLACK, GRAY, ' ');
+    }
+    for (x = 0; x < WELL_WIDTH * 2 + 2; x++)
+        putc(WELL_X + x - 1, WELL_HEIGHT, BLACK, GRAY, ' ');
+
+    /* Well */
+    for (y = 0; y < 2; y++)
+        for (x = 0; x < WELL_WIDTH; x++)
+            puts(WELL_X + x * 2, y, BLACK, BLACK, "  ");
+    for (y = 2; y < WELL_HEIGHT; y++)
+        for (x = 0; x < WELL_WIDTH; x++)
+            if (well[y][x])
+                puts(WELL_X + x * 2, y, BLACK, well[y][x], "  ");
+            else
+                puts(WELL_X + x * 2, y, BRIGHT, BLACK, "::");
+
+    /* Ghost */
+    for (y = 0; y < 4; y++)
+        for (x = 0; x < 4; x++)
+            if (TETRIS[current.i][current.r][y][x])
+                puts(WELL_X + current.x * 2 + x * 2, current.g + y,
+                     TETRIS[current.i][current.r][y][x], BLACK, "::");
+
+    /* Current */
+    for (y = 0; y < 4; y++)
+        for (x = 0; x < 4; x++)
+            if (TETRIS[current.i][current.r][y][x])
+                puts(WELL_X + current.x * 2 + x * 2, current.y + y, BLACK,
+                     TETRIS[current.i][current.r][y][x], "  ");
+}
+
 noreturn main()
 {
     clear(BLACK);
-    pcspk_freq(200);
+    spawn();
+    ghost();
+    draw();
 
     bool debug = false;
     u64 tpms;
-    u8 x = COLS / 2, y = ROWS / 2, color = YELLOW;
-    bool beep = false;
-    u32 random = 0;
+    u8 key;
 loop:
     tpms = (u32) tps() / 1000;
 
     if (debug) {
-        puts(0, 0, BRIGHT | GREEN, BLACK, "RTC sec:");
-        puts(10, 0, GREEN, BLACK, itoa(rtcs(), 16, 2));
-        puts(0, 1, BRIGHT | GREEN, BLACK, "ticks/ms:");
-        puts(10, 1, GREEN, BLACK, itoa(tpms, 10, 10));
-        puts(0, 2, BRIGHT | GREEN, BLACK, "timers:");
+        puts(0,  0, BRIGHT | GREEN, BLACK, "RTC sec:");
+        puts(10, 0, GREEN,          BLACK, itoa(rtcs(), 16, 2));
+        puts(0,  1, BRIGHT | GREEN, BLACK, "ticks/ms:");
+        puts(10, 1, GREEN,          BLACK, itoa(tpms, 10, 10));
+        puts(0,  2, BRIGHT | GREEN, BLACK, "key:");
+        puts(10, 2, GREEN,          BLACK, itoa(key, 16, 2));
+        puts(0,  3, BRIGHT | GREEN, BLACK, "i,r:");
+        puts(10, 3, GREEN,          BLACK, itoa(current.i, 10, 1));
+        putc(11, 3, GREEN,          BLACK, ',');
+        puts(12, 3, GREEN,          BLACK, itoa(current.r, 10, 1));
+        puts(0,  4, BRIGHT | GREEN, BLACK, "x,y,g:");
+        puts(10, 4, GREEN,          BLACK, itoa(current.x, 10, 3));
+        putc(13, 4, GREEN,          BLACK, ',');
+        puts(14, 4, GREEN,          BLACK, itoa(current.y, 10, 3));
+        putc(17, 4, GREEN,          BLACK, ',');
+        puts(18, 4, GREEN,          BLACK, itoa(current.g, 10, 3));
         u32 i;
-        for (i = 0; i < TIMER__LENGTH; i++)
-            puts(10 + i * 11, 2, GREEN, BLACK, itoa(timers[i], 10, 10));
-
-        puts(0, 3, BRIGHT | GREEN, BLACK, "random:");
-        puts(10, 3, GREEN, BLACK, itoa(random, 10, 1));
-    }
-
-    if (interval(TIMER_BLINK, tpms * 500))
-        color ^= BRIGHT;
-
-    if (beep && wait(TIMER_BEEP, tpms * 100)) {
-        pcspk_off();
-        beep = false;
-    }
-
-    u8 key;
-    if ((key = scan())) {
-        if (debug) {
-            puts(0, 4, BRIGHT | GREEN, BLACK, "key:");
-            puts(10, 4, GREEN, BLACK, itoa(key, 16, 2));
+        for (i = 0; i < TIMER__LENGTH; i++) {
+            puts(0,  5 + i, BRIGHT | GREEN, BLACK, "timer:");
+            puts(10, 5 + i, GREEN,          BLACK, itoa(timers[i], 10, 10));
         }
+    }
 
-        putc(x, y, BLACK, BLACK, ' ');
+    bool updated = false;
+
+    if ((key = scan())) {
         switch(key) {
         case KEY_D:
             debug = !debug;
             clear(BLACK);
             break;
-        case KEY_SPACE: random = rand(7); break;
-        case KEY_UP: y--; break;
-        case KEY_DOWN: y++; break;
-        case KEY_LEFT: x--; break;
-        case KEY_RIGHT: x++; break;
+        case KEY_LEFT:
+            move(-1, 0);
+            break;
+        case KEY_RIGHT:
+            move(1, 0);
+            break;
+        case KEY_DOWN:
+            move(0, 1);
+            break;
+        case KEY_UP:
+            rotate();
+            break;
+        case KEY_ENTER:
+            lock();
+            spawn();
+            break;
         }
+        updated = true;
     }
 
-    if (x >= COLS || y >= ROWS) {
-        beep = true;
-        pcspk_on();
-        x = COLS / 2;
-        y = ROWS / 2;
+    if (updated) {
+        ghost();
+        draw();
     }
-
-    putc(x, y, color, BLACK, '*');
 
     goto loop;
 }
