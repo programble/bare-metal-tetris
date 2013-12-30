@@ -66,6 +66,7 @@ u64 tps(void)
 enum timer {
     TIMER_BLINK,
     TIMER_BEEP,
+    TIMER_RAND,
     TIMER__LENGTH
 };
 
@@ -186,6 +187,13 @@ char *itoa(u32 n, u8 r, u8 w)
     return (char *) (s + i);
 }
 
+/* Random */
+
+u32 rand(u32 range)
+{
+    return (u32) rdtsc() % range;
+}
+
 noreturn main()
 {
     clear(BLACK);
@@ -195,6 +203,7 @@ noreturn main()
     u64 tpms;
     u8 x = COLS / 2, y = ROWS / 2, color = YELLOW;
     bool beep = false;
+    u32 random = 0;
 loop:
     tpms = (u32) tps() / 1000;
 
@@ -207,6 +216,9 @@ loop:
         u32 i;
         for (i = 0; i < TIMER__LENGTH; i++)
             puts(10 + i * 11, 2, GREEN, BLACK, itoa(timers[i], 10, 10));
+
+        puts(0, 3, BRIGHT | GREEN, BLACK, "random:");
+        puts(10, 3, GREEN, BLACK, itoa(random, 10, 1));
     }
 
     if (interval(TIMER_BLINK, tpms * 500))
@@ -217,11 +229,14 @@ loop:
         beep = false;
     }
 
+    if (interval(TIMER_RAND, tpms * 1000))
+        random = rand(7);
+
     u8 key;
     if ((key = scan())) {
         if (debug) {
-            puts(0, 3, BRIGHT | GREEN, BLACK, "key:");
-            puts(10, 3, GREEN, BLACK, itoa(key, 16, 2));
+            puts(0, 4, BRIGHT | GREEN, BLACK, "key:");
+            puts(10, 4, GREEN, BLACK, itoa(key, 16, 2));
         }
 
         putc(x, y, BLACK, BLACK, ' ');
