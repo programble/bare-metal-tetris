@@ -28,6 +28,17 @@ static inline void outb(u16 p, u8 d)
     asm("outb %1, %0" : : "dN" (p), "a" (d));
 }
 
+noreturn reset(void)
+{
+    u8 x;
+    do {
+        x = inb(0x64);
+    } while (x & 0x02);
+    outb(0x64, 0xFE);
+    while (true)
+        asm("hlt");
+}
+
 /* Timing */
 
 static inline u64 rdtsc(void)
@@ -132,6 +143,7 @@ void clear(enum color bg)
 /* Keyboard Input */
 
 #define KEY_D     (0x20)
+#define KEY_R     (0x13)
 #define KEY_UP    (0x48)
 #define KEY_DOWN  (0x50)
 #define KEY_LEFT  (0x4B)
@@ -473,6 +485,8 @@ loop:
             debug = !debug;
             clear(BLACK);
             break;
+        case KEY_R:
+            reset();
         case KEY_LEFT:
             move(-1, 0);
             break;
