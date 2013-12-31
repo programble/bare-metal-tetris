@@ -344,6 +344,8 @@ struct {
     s8 x, y, g;
 } current;
 
+u32 level = 1, score = 0;
+
 bool collide(u8 i, u8 r, s8 x, s8 y)
 {
     u8 xx, yy;
@@ -392,6 +394,12 @@ void rotate(void)
     current.r = r;
 }
 
+void soft_drop(void)
+{
+    move(0, 1);
+    score++;
+}
+
 void lock(void)
 {
     u8 x, y;
@@ -413,7 +421,9 @@ void update(void)
     }
 
     /* Row clearing */
-    u8 x, y, a, yy;
+    static u8 level_rows = 0;
+
+    u8 x, y, a, yy, rows = 0;
     for (y = 0; y < WELL_HEIGHT; y++) {
         for (a = 0, x = 0; x < WELL_WIDTH; x++)
             if (well[y][x])
@@ -421,21 +431,46 @@ void update(void)
         if (a != WELL_WIDTH)
             continue;
 
+        rows++;
+
         for (yy = y; yy > 0; yy--)
             for (x = 0; x < WELL_WIDTH; x++)
                 well[yy][x] = well[yy - 1][x];
+    }
+
+    /* Scoring */
+    switch (rows) {
+    case 1: score += 100 * level; break;
+    case 2: score += 300 * level; break;
+    case 3: score += 500 * level; break;
+    case 4: score += 800 * level; break;
+    }
+
+    /* Leveling */
+    level_rows += rows;
+    if (level_rows >= 10) {
+        level++;
+        level_rows -= 10;
     }
 }
 
 void drop(void)
 {
+    score += 2 * (current.g - current.y);
     current.y = current.g;
     update();
 }
 
 #define WELL_X (COLS / 2 - WELL_WIDTH)
+
 #define PREVIEW_X (COLS * 3/4)
 #define PREVIEW_Y (2)
+
+#define SCORE_X PREVIEW_X
+#define SCORE_Y (ROWS / 2 - 1)
+
+#define LEVEL_X SCORE_X
+#define LEVEL_Y (SCORE_Y + 4)
 
 void draw(void)
 {
@@ -482,6 +517,14 @@ void draw(void)
                      TETRIS[current.p][0][y][x], "  ");
             else
                 puts(PREVIEW_X + x * 2, PREVIEW_Y + y, BLACK, BLACK, "  ");
+
+    /* Score */
+    puts(SCORE_X + 2, SCORE_Y, BLUE, BLACK, "SCORE");
+    puts(SCORE_X, SCORE_Y + 2, BRIGHT | BLUE, BLACK, itoa(score, 10, 10));
+
+    /* Level */
+    puts(LEVEL_X + 2, LEVEL_Y, BLUE, BLACK, "LEVEL");
+    puts(LEVEL_X, LEVEL_Y + 2, BRIGHT | BLUE, BLACK, itoa(level, 10, 10));
 }
 
 noreturn main()
@@ -543,7 +586,7 @@ loop:
             move(1, 0);
             break;
         case KEY_DOWN:
-            move(0, 1);
+            soft_drop();
             break;
         case KEY_UP:
             rotate();
