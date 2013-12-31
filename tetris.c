@@ -480,7 +480,7 @@ noreturn main()
     u64 tpms;
     u8 last_key;
 loop:
-    tpms = (u32) tps() / 1000;
+    tpms = (u32) (tps() >> 3) / 125; /* Less chance of truncation */
 
     if (debug) {
         puts(0,  0, BRIGHT | GREEN, BLACK, "RTC sec:");
