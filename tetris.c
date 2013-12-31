@@ -463,10 +463,10 @@ void drop(void)
 
 #define WELL_X (COLS / 2 - WELL_WIDTH)
 
-#define PREVIEW_X (COLS * 3/4)
+#define PREVIEW_X (COLS * 3/4 + 1)
 #define PREVIEW_Y (2)
 
-#define SCORE_X PREVIEW_X
+#define SCORE_X (COLS * 3/4)
 #define SCORE_Y (ROWS / 2 - 1)
 
 #define LEVEL_X SCORE_X
