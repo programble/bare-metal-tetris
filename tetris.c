@@ -337,11 +337,10 @@ u8 TETRIS[7][4][4][4] = {
 
 #define WELL_WIDTH (10)
 #define WELL_HEIGHT (22)
-#define WELL_X (COLS / 2 - WELL_WIDTH)
 u8 well[WELL_HEIGHT][WELL_WIDTH];
 
 struct {
-    u8 i, r;
+    u8 i, r, p;
     s8 x, y, g;
 } current;
 
@@ -360,7 +359,8 @@ bool collide(u8 i, u8 r, s8 x, s8 y)
 
 void spawn(void)
 {
-    current.i = rand(7);
+    current.i = current.p;
+    current.p = rand(7);
     current.r = 0;
     current.x = WELL_WIDTH / 2 - 2;
     current.y = 0;
@@ -433,6 +433,10 @@ void drop(void)
     update();
 }
 
+#define WELL_X (COLS / 2 - WELL_WIDTH)
+#define PREVIEW_X (COLS * 3/4)
+#define PREVIEW_Y (2)
+
 void draw(void)
 {
     u8 x, y;
@@ -469,11 +473,21 @@ void draw(void)
             if (TETRIS[current.i][current.r][y][x])
                 puts(WELL_X + current.x * 2 + x * 2, current.y + y, BLACK,
                      TETRIS[current.i][current.r][y][x], "  ");
+
+    /* Preview */
+    for (y = 0; y < 4; y++)
+        for (x = 0; x < 4; x++)
+            if (TETRIS[current.p][0][y][x])
+                puts(PREVIEW_X + x * 2, PREVIEW_Y + y, BLACK,
+                     TETRIS[current.p][0][y][x], "  ");
+            else
+                puts(PREVIEW_X + x * 2, PREVIEW_Y + y, BLACK, BLACK, "  ");
 }
 
 noreturn main()
 {
     clear(BLACK);
+    spawn(); /* First call will always spawn I */
     spawn();
     ghost();
     draw();
@@ -491,10 +505,12 @@ loop:
         puts(10, 1, GREEN,          BLACK, itoa(tpms, 10, 10));
         puts(0,  2, BRIGHT | GREEN, BLACK, "key:");
         puts(10, 2, GREEN,          BLACK, itoa(last_key, 16, 2));
-        puts(0,  3, BRIGHT | GREEN, BLACK, "i,r:");
+        puts(0,  3, BRIGHT | GREEN, BLACK, "i,r,p:");
         puts(10, 3, GREEN,          BLACK, itoa(current.i, 10, 1));
         putc(11, 3, GREEN,          BLACK, ',');
         puts(12, 3, GREEN,          BLACK, itoa(current.r, 10, 1));
+        putc(13, 3, GREEN,          BLACK, ',');
+        puts(14, 3, GREEN,          BLACK, itoa(current.p, 10, 1));
         puts(0,  4, BRIGHT | GREEN, BLACK, "x,y,g:");
         puts(10, 4, GREEN,          BLACK, itoa(current.x, 10, 3));
         putc(13, 4, GREEN,          BLACK, ',');
