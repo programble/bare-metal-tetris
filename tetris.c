@@ -406,6 +406,8 @@ void update(void)
 {
     /* Gravity */
     if (!move(0, 1)) {
+        if (current.y == 0)
+            reset(); // TODO: Game Over
         lock();
         spawn();
     }
