@@ -60,18 +60,19 @@ u8 rtcs(void)
     return sec;
 }
 
-u64 tps(void)
+u64 tpms;
+
+void tps(void)
 {
-    static u64 ti = 0, dt = 0;
+    static u64 ti = 0;
     static u8 last_sec = 0xFF;
     u8 sec = rtcs();
     if (sec != last_sec) {
         last_sec = sec;
         u64 tf = rdtsc();
-        dt = tf - ti;
+        tpms = (u32) ((tf - ti) >> 3) / 125; /* Less chance of truncation */
         ti = tf;
     }
-    return dt;
 }
 
 enum timer {
@@ -81,19 +82,19 @@ enum timer {
 
 u64 timers[TIMER__LENGTH] = {0};
 
-bool interval(enum timer timer, u64 ticks)
+bool interval(enum timer timer, u32 ms)
 {
     u64 tf = rdtsc();
-    if (tf - timers[timer] >= ticks) {
+    if (tf - timers[timer] >= tpms * ms) {
         timers[timer] = tf;
         return true;
     } else return false;
 }
 
-bool wait(enum timer timer, u64 ticks)
+bool wait(enum timer timer, u32 ms)
 {
     if (timers[timer]) {
-        if (rdtsc() - timers[timer] >= ticks) {
+        if (rdtsc() - timers[timer] >= tpms * ms) {
             timers[timer] = 0;
             return true;
         } else return false;
@@ -549,10 +550,9 @@ noreturn main()
     draw();
 
     bool debug = false;
-    u64 tpms;
     u8 last_key;
 loop:
-    tpms = (u32) (tps() >> 3) / 125; /* Less chance of truncation */
+    tps();
 
     if (debug) {
         puts(0,  0, BRIGHT | GREEN, BLACK, "RTC sec:");
@@ -615,7 +615,7 @@ loop:
         updated = true;
     }
 
-    if (!paused && interval(TIMER_UPDATE, tpms * 1000)) {
+    if (!paused && interval(TIMER_UPDATE, 1000)) {
         update();
         updated = true;
     }
