@@ -144,6 +144,7 @@ void clear(enum color bg)
 /* Keyboard Input */
 
 #define KEY_D     (0x20)
+#define KEY_P     (0x19)
 #define KEY_R     (0x13)
 #define KEY_UP    (0x48)
 #define KEY_DOWN  (0x50)
@@ -346,6 +347,8 @@ struct {
 
 u32 level = 1, score = 0;
 
+bool paused = false;
+
 bool collide(u8 i, u8 r, s8 x, s8 y)
 {
     u8 xx, yy;
@@ -466,7 +469,10 @@ void drop(void)
 #define PREVIEW_X (COLS * 3/4 + 1)
 #define PREVIEW_Y (2)
 
-#define SCORE_X (COLS * 3/4)
+#define STATUS_X (COLS * 3/4)
+#define STATUS_Y (ROWS / 2 - 4)
+
+#define SCORE_X STATUS_X
 #define SCORE_Y (ROWS / 2 - 1)
 
 #define LEVEL_X SCORE_X
@@ -475,6 +481,9 @@ void drop(void)
 void draw(void)
 {
     u8 x, y;
+
+    if (paused)
+        goto status;
 
     /* Border */
     for (y = 2; y < WELL_HEIGHT; y++) {
@@ -517,6 +526,10 @@ void draw(void)
                      TETRIS[current.p][0][y][x], "  ");
             else
                 puts(PREVIEW_X + x * 2, PREVIEW_Y + y, BLACK, BLACK, "  ");
+
+status:
+    if (paused)
+        puts(STATUS_X + 2, STATUS_Y, BRIGHT | YELLOW, BLACK, "PAUSED");
 
     /* Score */
     puts(SCORE_X + 2, SCORE_Y, BLUE, BLACK, "SCORE");
@@ -594,11 +607,15 @@ loop:
         case KEY_ENTER:
             drop();
             break;
+        case KEY_P:
+            clear(BLACK);
+            paused = !paused;
+            break;
         }
         updated = true;
     }
 
-    if (interval(TIMER_UPDATE, tpms * 1000)) {
+    if (!paused && interval(TIMER_UPDATE, tpms * 1000)) {
         update();
         updated = true;
     }
