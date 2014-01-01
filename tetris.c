@@ -399,8 +399,8 @@ void rotate(void)
 
 void soft_drop(void)
 {
-    move(0, 1);
-    score++;
+    if (move(0, 1))
+        score++;
 }
 
 void lock(void)
