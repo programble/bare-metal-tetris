@@ -348,7 +348,7 @@ struct {
 
 u32 level = 1, score = 0;
 
-bool paused = false;
+bool paused = false, game_over = false;
 
 bool collide(u8 i, u8 r, s8 x, s8 y)
 {
@@ -418,8 +418,10 @@ void update(void)
 {
     /* Gravity */
     if (!move(0, 1)) {
-        if (current.y == 0)
-            reset(); // TODO: Game Over
+        if (current.y == 0) {
+            game_over = true;
+            return;
+        }
         lock();
         spawn();
     }
@@ -531,6 +533,8 @@ void draw(void)
 status:
     if (paused)
         puts(STATUS_X + 2, STATUS_Y, BRIGHT | YELLOW, BLACK, "PAUSED");
+    if (game_over)
+        puts(STATUS_X, STATUS_Y, BRIGHT | RED, BLACK, "GAME OVER");
 
     /* Score */
     puts(SCORE_X + 2, SCORE_Y, BLUE, BLACK, "SCORE");
@@ -615,7 +619,7 @@ loop:
         updated = true;
     }
 
-    if (!paused && interval(TIMER_UPDATE, 1000)) {
+    if (!paused && !game_over && interval(TIMER_UPDATE, 1000)) {
         update();
         updated = true;
     }
