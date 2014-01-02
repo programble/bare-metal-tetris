@@ -146,6 +146,7 @@ void clear(enum color bg)
 /* Keyboard Input */
 
 #define KEY_D     (0x20)
+#define KEY_H     (0x23)
 #define KEY_P     (0x19)
 #define KEY_R     (0x13)
 #define KEY_UP    (0x48)
@@ -579,7 +580,7 @@ noreturn main()
     ghost();
     draw();
 
-    bool debug = false;
+    bool debug = false, help = true;
     u8 last_key;
 loop:
     tps();
@@ -610,6 +611,27 @@ loop:
         }
     }
 
+    if (help) {
+        puts(1, 13, BRIGHT | BLUE, BLACK, "LEFT");
+        puts(7, 13, BLUE, BLACK, "- Move left");
+        puts(1, 14, BRIGHT | BLUE, BLACK, "RIGHT");
+        puts(7, 14, BLUE, BLACK, "- Move right");
+        puts(1, 15, BRIGHT | BLUE, BLACK, "UP");
+        puts(7, 15, BLUE, BLACK, "- Rotate clockwise");
+        puts(1, 16, BRIGHT | BLUE, BLACK, "DOWN");
+        puts(7, 16, BLUE, BLACK, "- Soft drop");
+        puts(1, 17, BRIGHT | BLUE, BLACK, "ENTER");
+        puts(7, 17, BLUE, BLACK, "- Hard drop");
+        puts(1, 18, BRIGHT | BLUE, BLACK, "P");
+        puts(7, 18, BLUE, BLACK, "- Pause");
+        puts(1, 19, BRIGHT | BLUE, BLACK, "R");
+        puts(7, 19, BLUE, BLACK, "- Hard reset");
+        puts(1, 20, BRIGHT | BLUE, BLACK, "D");
+        puts(7, 20, BLUE, BLACK, "- Toggle debug info");
+        puts(1, 21, BRIGHT | BLUE, BLACK, "H");
+        puts(7, 21, BLUE, BLACK, "- Toggle help");
+    }
+
     bool updated = false;
 
     u8 key;
@@ -618,6 +640,10 @@ loop:
         switch(key) {
         case KEY_D:
             debug = !debug;
+            clear(BLACK);
+            break;
+        case KEY_H:
+            help = !help;
             clear(BLACK);
             break;
         case KEY_R:
