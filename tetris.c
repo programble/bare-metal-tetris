@@ -383,6 +383,9 @@ void ghost(void)
 
 bool move(s8 dx, s8 dy)
 {
+    if (game_over)
+        return false;
+
     if (collide(current.i, current.r, current.x + dx, current.y + dy))
         return false;
     current.x += dx;
@@ -392,6 +395,9 @@ bool move(s8 dx, s8 dy)
 
 void rotate(void)
 {
+    if (game_over)
+        return;
+
     u8 r = (current.r + 1) % 4;
     if (collide(current.i, r, current.x, current.y))
         return;
@@ -462,6 +468,9 @@ void update(void)
 
 void drop(void)
 {
+    if (game_over)
+        return;
+
     score += 2 * (current.g - current.y);
     current.y = current.g;
     update();
@@ -612,6 +621,8 @@ loop:
             drop();
             break;
         case KEY_P:
+            if (game_over)
+                break;
             clear(BLACK);
             paused = !paused;
             break;
