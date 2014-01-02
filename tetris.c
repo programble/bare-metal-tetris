@@ -149,6 +149,7 @@ void clear(enum color bg)
 #define KEY_H     (0x23)
 #define KEY_P     (0x19)
 #define KEY_R     (0x13)
+#define KEY_S     (0x1F)
 #define KEY_UP    (0x48)
 #define KEY_DOWN  (0x50)
 #define KEY_LEFT  (0x4B)
@@ -365,9 +366,12 @@ bool collide(u8 i, u8 r, s8 x, s8 y)
     return false;
 }
 
+u32 stats[7];
+
 void spawn(void)
 {
     current.i = current.p;
+    stats[current.i]++;
     current.p = rand(7);
     current.r = 0;
     current.x = WELL_WIDTH / 2 - 2;
@@ -575,12 +579,12 @@ status:
 noreturn main()
 {
     clear(BLACK);
-    spawn(); /* First call will always spawn I */
+    current.p = rand(7);
     spawn();
     ghost();
     draw();
 
-    bool debug = false, help = true;
+    bool debug = false, help = true, statistics = false;
     u8 last_key;
 loop:
     tps();
@@ -612,24 +616,38 @@ loop:
     }
 
     if (help) {
-        puts(1, 13, BRIGHT | BLUE, BLACK, "LEFT");
-        puts(7, 13, BLUE, BLACK, "- Move left");
-        puts(1, 14, BRIGHT | BLUE, BLACK, "RIGHT");
-        puts(7, 14, BLUE, BLACK, "- Move right");
-        puts(1, 15, BRIGHT | BLUE, BLACK, "UP");
-        puts(7, 15, BLUE, BLACK, "- Rotate clockwise");
-        puts(1, 16, BRIGHT | BLUE, BLACK, "DOWN");
-        puts(7, 16, BLUE, BLACK, "- Soft drop");
-        puts(1, 17, BRIGHT | BLUE, BLACK, "ENTER");
-        puts(7, 17, BLUE, BLACK, "- Hard drop");
-        puts(1, 18, BRIGHT | BLUE, BLACK, "P");
-        puts(7, 18, BLUE, BLACK, "- Pause");
-        puts(1, 19, BRIGHT | BLUE, BLACK, "R");
-        puts(7, 19, BLUE, BLACK, "- Hard reset");
+        puts(1, 12, BRIGHT | BLUE, BLACK, "LEFT");
+        puts(7, 12, BLUE,          BLACK, "- Move left");
+        puts(1, 13, BRIGHT | BLUE, BLACK, "RIGHT");
+        puts(7, 13, BLUE,          BLACK, "- Move right");
+        puts(1, 14, BRIGHT | BLUE, BLACK, "UP");
+        puts(7, 14, BLUE,          BLACK, "- Rotate clockwise");
+        puts(1, 15, BRIGHT | BLUE, BLACK, "DOWN");
+        puts(7, 15, BLUE,          BLACK, "- Soft drop");
+        puts(1, 16, BRIGHT | BLUE, BLACK, "ENTER");
+        puts(7, 16, BLUE,          BLACK, "- Hard drop");
+        puts(1, 17, BRIGHT | BLUE, BLACK, "P");
+        puts(7, 17, BLUE,          BLACK, "- Pause");
+        puts(1, 18, BRIGHT | BLUE, BLACK, "R");
+        puts(7, 18, BLUE,          BLACK, "- Hard reset");
+        puts(1, 19, BRIGHT | BLUE, BLACK, "S");
+        puts(7, 19, BLUE,          BLACK, "- Toggle statistics");
         puts(1, 20, BRIGHT | BLUE, BLACK, "D");
-        puts(7, 20, BLUE, BLACK, "- Toggle debug info");
+        puts(7, 20, BLUE,          BLACK, "- Toggle debug info");
         puts(1, 21, BRIGHT | BLUE, BLACK, "H");
-        puts(7, 21, BLUE, BLACK, "- Toggle help");
+        puts(7, 21, BLUE,          BLACK, "- Toggle help");
+    }
+
+    if (statistics) {
+        u8 i, x, y;
+        for (i = 0; i < 7; i++) {
+            for (y = 0; y < 4; y++)
+                for (x = 0; x < 4; x++)
+                    if (TETRIS[i][0][y][x])
+                        puts(5 + x * 2, 1 + i * 3 + y, BLACK,
+                             TETRIS[i][0][y][x], "  ");
+            puts(14, 2 + i * 3, BLUE, BLACK, itoa(stats[i], 10, 10));
+        }
     }
 
     bool updated = false;
@@ -640,10 +658,20 @@ loop:
         switch(key) {
         case KEY_D:
             debug = !debug;
+            if (debug)
+                help = statistics = false;
             clear(BLACK);
             break;
         case KEY_H:
             help = !help;
+            if (help)
+                debug = statistics = false;
+            clear(BLACK);
+            break;
+        case KEY_S:
+            statistics = !statistics;
+            if (statistics)
+                debug = help = false;
             clear(BLACK);
             break;
         case KEY_R:
