@@ -77,6 +77,7 @@ void tps(void)
 
 enum timer {
     TIMER_UPDATE,
+    TIMER_CLEAR,
     TIMER__LENGTH
 };
 
@@ -420,6 +421,8 @@ void lock(void)
                     TETRIS[current.i][current.r][y][x];
 }
 
+s8 cleared_rows[4];
+
 void update(void)
 {
     /* Gravity */
@@ -435,7 +438,7 @@ void update(void)
     /* Row clearing */
     static u8 level_rows = 0;
 
-    u8 x, y, a, yy, rows = 0;
+    u8 x, y, a, i = 0, rows = 0;
     for (y = 0; y < WELL_HEIGHT; y++) {
         for (a = 0, x = 0; x < WELL_WIDTH; x++)
             if (well[y][x])
@@ -444,10 +447,7 @@ void update(void)
             continue;
 
         rows++;
-
-        for (yy = y; yy > 0; yy--)
-            for (x = 0; x < WELL_WIDTH; x++)
-                well[yy][x] = well[yy - 1][x];
+        cleared_rows[i++] = y;
     }
 
     /* Scoring */
@@ -463,6 +463,19 @@ void update(void)
     if (level_rows >= 10) {
         level++;
         level_rows -= 10;
+    }
+}
+
+void clear_rows(void)
+{
+    s8 i, y, x;
+    for (i = 0; i < 4; i++) {
+        if (!cleared_rows[i])
+            break;
+        for (y = cleared_rows[i]; y > 0; y--)
+            for (x = 0; x < WELL_WIDTH; x++)
+                well[y][x] = well[y - 1][x];
+        cleared_rows[i] = 0;
     }
 }
 
@@ -512,7 +525,11 @@ void draw(void)
     for (y = 2; y < WELL_HEIGHT; y++)
         for (x = 0; x < WELL_WIDTH; x++)
             if (well[y][x])
-                puts(WELL_X + x * 2, y, BLACK, well[y][x], "  ");
+                if (cleared_rows[0] == y || cleared_rows[1] == y ||
+                    cleared_rows[2] == y || cleared_rows[3] == y)
+                    puts(WELL_X + x * 2, y, BLACK, BRIGHT | GRAY, "  ");
+                else
+                    puts(WELL_X + x * 2, y, BLACK, well[y][x], "  ");
             else
                 puts(WELL_X + x * 2, y, BRIGHT, BLACK, "::");
 
@@ -632,6 +649,11 @@ loop:
 
     if (!paused && !game_over && interval(TIMER_UPDATE, 1000)) {
         update();
+        updated = true;
+    }
+
+    if (cleared_rows[0] && wait(TIMER_CLEAR, 100)) {
+        clear_rows();
         updated = true;
     }
 
