@@ -30,13 +30,9 @@ static inline void outb(u16 p, u8 d)
 
 noreturn reset(void)
 {
-    u8 x;
-    do {
-        x = inb(0x64);
-    } while (x & 0x02);
-    outb(0x64, 0xFE);
+    u8 one = 1, zero = 0;
     while (true)
-        asm("hlt");
+        one /= zero;
 }
 
 /* Timing */
@@ -701,7 +697,7 @@ loop:
         updated = true;
     }
 
-    if (!paused && !game_over && interval(TIMER_UPDATE, 1000)) {
+    if (!paused && !game_over && interval(TIMER_UPDATE, 100)) {
         update();
         updated = true;
     }
