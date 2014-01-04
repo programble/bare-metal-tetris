@@ -28,6 +28,9 @@ static inline void outb(u16 p, u8 d)
     asm("outb %1, %0" : : "dN" (p), "a" (d));
 }
 
+/* Divide by zero (in a loop to satisfy the noreturn attribute) in order to
+ * trigger a division by zero ISR, which is unhandled and causes a hard reset.
+ */
 noreturn reset(void)
 {
     u8 one = 1, zero = 0;
@@ -37,6 +40,7 @@ noreturn reset(void)
 
 /* Timing */
 
+/* Return the number of CPU ticks since boot. */
 static inline u64 rdtsc(void)
 {
     u32 hi, lo;
@@ -44,6 +48,10 @@ static inline u64 rdtsc(void)
     return ((u64) lo) | (((u64) hi) << 32);
 }
 
+/* Return the current second field of the real-time-clock (RTC). Note that the
+ * value may or may not be represented in such a way that it should be
+ * formatted in hex to display the current second (i.e. 0x30 for the 30th
+ * second). */
 u8 rtcs(void)
 {
     u8 last = 0, sec;
@@ -56,8 +64,13 @@ u8 rtcs(void)
     return sec;
 }
 
+/* The number of CPU ticks per millisecond */
 u64 tpms;
 
+/* Set tpms to the number of CPU ticks per millisecond based on the number of
+ * ticks in the last second, if the RTC second has changed since the last call.
+ * This gets called on every iteration of the main loop in order to provide
+ * accurate timing. */
 void tps(void)
 {
     static u64 ti = 0;
@@ -71,6 +84,7 @@ void tps(void)
     }
 }
 
+/* IDs used to keep separate timing operations separate */
 enum timer {
     TIMER_UPDATE,
     TIMER_CLEAR,
@@ -79,6 +93,9 @@ enum timer {
 
 u64 timers[TIMER__LENGTH] = {0};
 
+/* Return true if at least ms milliseconds have elapsed since the last call
+ * that returned true for this timer. When called on each iteration of the main
+ * loop, has the effect of returning true once every ms milliseconds. */
 bool interval(enum timer timer, u32 ms)
 {
     u64 tf = rdtsc();
@@ -88,6 +105,8 @@ bool interval(enum timer timer, u32 ms)
     } else return false;
 }
 
+/* Return true if at least ms milliseconds have elapsed since the first call
+ * for this timer and reset the timer. */
 bool wait(enum timer timer, u32 ms)
 {
     if (timers[timer]) {
@@ -103,6 +122,8 @@ bool wait(enum timer timer, u32 ms)
 
 /* Video Output */
 
+/* Seven possible display colors. Bright variations can be used by bitwise OR
+ * with BRIGHT (i.e. BRIGHT | BLUE). */
 enum color {
     BLACK,
     BLUE,
@@ -119,18 +140,24 @@ enum color {
 #define ROWS (25)
 u16 *const video = (u16*) 0xB8000;
 
+/* Display a character at x, y in fg foreground color and bg background color.
+ */
 void putc(u8 x, u8 y, enum color fg, enum color bg, char c)
 {
     u16 z = (bg << 12) | (fg << 8) | c;
     video[y * COLS + x] = z;
 }
 
+/* Display a string starting at x, y in fg foreground color and bg background
+ * color. Characters in the string are not interpreted (e.g \n, \b, \t, etc.).
+ * */
 void puts(u8 x, u8 y, enum color fg, enum color bg, const char *s)
 {
     for (; *s; s++, x++)
         putc(x, y, fg, bg, *s);
 }
 
+/* Clear the screen to bg backround color. */
 void clear(enum color bg)
 {
     u8 x, y;
@@ -153,6 +180,9 @@ void clear(enum color bg)
 #define KEY_ENTER (0x1C)
 #define KEY_SPACE (0x39)
 
+/* Return the scancode of the current up or down key if it has changed since
+ * the last call, otherwise returns 0. When called on every iteration of the
+ * main loop, returns non-zero on a key event. */
 u8 scan(void)
 {
     static u8 key = 0;
@@ -164,19 +194,23 @@ u8 scan(void)
 
 /* PC Speaker */
 
-void pcspk_freq(u32 freq)
+/* Set the frequency of the PC speaker through timer 2 of the programmable
+ * interrupt timer (PIT). */
+void pcspk_freq(u32 hz)
 {
-    u32 div = 1193180 / freq;
+    u32 div = 1193180 / hz;
     outb(0x43, 0xB6);
     outb(0x42, (u8) div);
     outb(0x42, (u8) (div >> 8));
 }
 
+/* Enable timer 2 of the PIT to drive the PC speaker. */
 void pcspk_on(void)
 {
     outb(0x61, inb(0x61) | 0x3);
 }
 
+/* Disable timer 2 of the PIT to drive the PC speaker. */
 void pcspk_off(void)
 {
     outb(0x61, inb(0x61) & 0xFC);
@@ -184,6 +218,7 @@ void pcspk_off(void)
 
 /* Formatting */
 
+/* Format n in radix r (2-16) as a w length string. */
 char *itoa(u32 n, u8 r, u8 w)
 {
     static const char d[16] = "0123456789ABCDEF";
@@ -200,6 +235,8 @@ char *itoa(u32 n, u8 r, u8 w)
 
 /* Random */
 
+/* Generate a random number from 0 inclusive to range exclusive from the number
+ * of CPU ticks since boot. */
 u32 rand(u32 range)
 {
     return (u32) rdtsc() % range;
@@ -207,6 +244,8 @@ u32 rand(u32 range)
 
 /* Tetris */
 
+/* The seven tetriminos in each rotation. Each tetrimino is represented as an
+ * array of 4 rotations, each represented by a 4x4 array of color values. */
 u8 TETRIS[7][4][4][4] = {
     { /* I */
         {{0,0,0,0},
@@ -336,19 +375,24 @@ u8 TETRIS[7][4][4][4] = {
     }
 };
 
+/* Two-dimensional array of color values */
 #define WELL_WIDTH (10)
 #define WELL_HEIGHT (22)
 u8 well[WELL_HEIGHT][WELL_WIDTH];
 
 struct {
-    u8 i, r, p;
-    s8 x, y, g;
+    u8 i, r; /* Index and rotation into the TETRIS array */
+    u8 p;    /* Index of preview tetrimino */
+    s8 x, y; /* Coordinates */
+    s8 g;    /* Y-coordinate of ghost */
 } current;
 
 u32 level = 1, score = 0;
 
 bool paused = false, game_over = false;
 
+/* Return true if the tetrimino i in rotation r will collide when placed at x,
+ * y. */
 bool collide(u8 i, u8 r, s8 x, s8 y)
 {
     u8 xx, yy;
@@ -364,6 +408,9 @@ bool collide(u8 i, u8 r, s8 x, s8 y)
 
 u32 stats[7];
 
+/* Set the current tetrimino to the preview tetrimino in the default rotation
+ * and place it in the top center. Generate a random preview tetrimino.
+ * Increase the stats count for the spawned tetrimino. */
 void spawn(void)
 {
     current.i = current.p;
@@ -374,6 +421,8 @@ void spawn(void)
     current.y = 0;
 }
 
+/* Set the ghost y-coordinate by moving the current tetrimino down until it
+ * collides. */
 void ghost(void)
 {
     s8 y;
@@ -383,6 +432,8 @@ void ghost(void)
     current.g = y - 1;
 }
 
+/* Try to move the current tetrimino by dx, dy and return true if successful.
+ */
 bool move(s8 dx, s8 dy)
 {
     if (game_over)
@@ -395,23 +446,30 @@ bool move(s8 dx, s8 dy)
     return true;
 }
 
-void rotate(void)
+/* Try to rotate the current tetrimino clockwise and return true if successful.
+ */
+bool rotate(void)
 {
     if (game_over)
-        return;
+        return false;
 
     u8 r = (current.r + 1) % 4;
     if (collide(current.i, r, current.x, current.y))
-        return;
+        return false;
     current.r = r;
+    return true;
 }
 
+/* Try to move the current tetrimino down one and increase the score if
+ * successful. */
 void soft_drop(void)
 {
     if (move(0, 1))
         score++;
 }
 
+/* Lock the current tetrimino into the well. This is done by copying the color
+ * values from the 4x4 array of the tetrimino into the well array. */
 void lock(void)
 {
     u8 x, y;
@@ -422,11 +480,17 @@ void lock(void)
                     TETRIS[current.i][current.r][y][x];
 }
 
+/* The y-coordinates of the rows cleared in the last update, top down */
 s8 cleared_rows[4];
 
+/* Update the game state. Called at an interval relative to the current level.
+ */
 void update(void)
 {
-    /* Gravity */
+    /* Gravity: move the current tetrimino down by one. If it cannot be moved
+     * and it is still in the top row, set game over state. If it cannot be
+     * moved down but is not in the top row, lock it in place and spawn a new
+     * tetrimino. */
     if (!move(0, 1)) {
         if (current.y == 0) {
             game_over = true;
@@ -436,8 +500,9 @@ void update(void)
         spawn();
     }
 
-    /* Row clearing */
-    static u8 level_rows = 0;
+    /* Row clearing: check if any rows are full across and add them to the
+     * cleared_rows array. */
+    static u8 level_rows = 0; /* Rows cleared in the current level */
 
     u8 x, y, a, i = 0, rows = 0;
     for (y = 0; y < WELL_HEIGHT; y++) {
@@ -459,7 +524,7 @@ void update(void)
     case 4: score += 800 * level; break;
     }
 
-    /* Leveling */
+    /* Leveling: increase the level for every 10 rows cleared. */
     level_rows += rows;
     if (level_rows >= 10) {
         level++;
@@ -467,6 +532,8 @@ void update(void)
     }
 }
 
+/* Clear the rows in the rows_cleared array and move all rows above them down.
+ */
 void clear_rows(void)
 {
     s8 i, y, x;
@@ -480,6 +547,8 @@ void clear_rows(void)
     }
 }
 
+/* Move the current tetrimino to the position of its ghost, increase the score
+ * and trigger an update (to cause locking and clearing). */
 void drop(void)
 {
     if (game_over)
@@ -504,6 +573,11 @@ void drop(void)
 #define LEVEL_X SCORE_X
 #define LEVEL_Y (SCORE_Y + 4)
 
+/* Draw the well, current tetrimino, its ghost, the preview tetrimino, the
+ * status, score and level indicators. Each well/tetrimino cell is drawn one
+ * screen-row high and two screen-columns wide. The top two rows of the well
+ * are hidden. Rows in the cleared_rows array are drawn as white rather than
+ * their actual colors. */
 void draw(void)
 {
     u8 x, y;
@@ -697,7 +771,7 @@ loop:
         updated = true;
     }
 
-    if (!paused && !game_over && interval(TIMER_UPDATE, 100)) {
+    if (!paused && !game_over && interval(TIMER_UPDATE, 1000)) {
         update();
         updated = true;
     }
