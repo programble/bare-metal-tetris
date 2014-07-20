@@ -1,0 +1,4 @@
+default 0
+timeout 0
+title TETRIS
+kernel /boot/tetris.elf
