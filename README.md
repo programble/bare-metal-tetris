@@ -2,6 +2,8 @@
 
 Tetris for x86.
 
+![QEMU screenshot](https://raw.githubusercontent.com/programble/bare-metal-tetris/master/screenshot.png)
+
 ## Features
 
  - Color text display
