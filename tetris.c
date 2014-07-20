@@ -242,6 +242,19 @@ u32 rand(u32 range)
     return (u32) rdtsc() % range;
 }
 
+/* Shuffle an array of bytes arr of length len in-place using Fisher-Yates. */
+void shuffle(u8 arr[], u32 len)
+{
+    u32 i, j;
+    u8 t;
+    for (i = len - 1; i > 0; i--) {
+        j = rand(i + 1);
+        t = arr[i];
+        arr[i] = arr[j];
+        arr[j] = t;
+    }
+}
+
 /* Tetris */
 
 /* The seven tetriminos in each rotation. Each tetrimino is represented as an
@@ -382,10 +395,14 @@ u8 well[WELL_HEIGHT][WELL_WIDTH];
 
 struct {
     u8 i, r; /* Index and rotation into the TETRIS array */
-    u8 p;    /* Index of preview tetrimino */
+    u8 p;    /* Index into bag of preview tetrimino */
     s8 x, y; /* Coordinates */
     s8 g;    /* Y-coordinate of ghost */
 } current;
+
+/* Shuffled bag of next tetrimino indices */
+#define BAG_SIZE (7)
+u8 bag[BAG_SIZE] = {0, 1, 2, 3, 4, 5, 6};
 
 u32 level = 1, score = 0;
 
@@ -409,16 +426,22 @@ bool collide(u8 i, u8 r, s8 x, s8 y)
 u32 stats[7];
 
 /* Set the current tetrimino to the preview tetrimino in the default rotation
- * and place it in the top center. Generate a random preview tetrimino.
- * Increase the stats count for the spawned tetrimino. */
+ * and place it in the top center. Increase the stats count for the spawned
+ * tetrimino. Set the preview tetrimino to the next one in the shuffled bag. If
+ * the spawned tetrimino was the last in the bag, re-shuffle the bag and set
+ * the preview to the first in the bag. */
 void spawn(void)
 {
-    current.i = current.p;
+    current.i = bag[current.p];
     stats[current.i]++;
-    current.p = rand(7);
     current.r = 0;
     current.x = WELL_WIDTH / 2 - 2;
     current.y = 0;
+    current.p++;
+    if (current.p == BAG_SIZE) {
+        current.p = 0;
+        shuffle(bag, BAG_SIZE);
+    }
 }
 
 /* Set the ghost y-coordinate by moving the current tetrimino down until it
@@ -625,9 +648,9 @@ void draw(void)
     /* Preview */
     for (y = 0; y < 4; y++)
         for (x = 0; x < 4; x++)
-            if (TETRIS[current.p][0][y][x])
+            if (TETRIS[bag[current.p]][0][y][x])
                 puts(PREVIEW_X + x * 2, PREVIEW_Y + y, BLACK,
-                     TETRIS[current.p][0][y][x], "  ");
+                     TETRIS[bag[current.p]][0][y][x], "  ");
             else
                 puts(PREVIEW_X + x * 2, PREVIEW_Y + y, BLACK, BLACK, "  ");
 
@@ -649,7 +672,7 @@ status:
 noreturn main()
 {
     clear(BLACK);
-    current.p = rand(7);
+    shuffle(bag, BAG_SIZE);
     spawn();
     ghost();
     draw();
@@ -660,6 +683,7 @@ loop:
     tps();
 
     if (debug) {
+        u32 i;
         puts(0,  0, BRIGHT | GREEN, BLACK, "RTC sec:");
         puts(10, 0, GREEN,          BLACK, itoa(rtcs(), 16, 2));
         puts(0,  1, BRIGHT | GREEN, BLACK, "ticks/ms:");
@@ -678,10 +702,13 @@ loop:
         puts(14, 4, GREEN,          BLACK, itoa(current.y, 10, 3));
         putc(17, 4, GREEN,          BLACK, ',');
         puts(18, 4, GREEN,          BLACK, itoa(current.g, 10, 3));
-        u32 i;
+        puts(0,  5, BRIGHT | GREEN, BLACK, "bag:");
+        for (i = 0; i < 7; i++) {
+            puts(10 + i * 2, 5, GREEN, BLACK, itoa(bag[i], 10, 1));
+        }
         for (i = 0; i < TIMER__LENGTH; i++) {
-            puts(0,  5 + i, BRIGHT | GREEN, BLACK, "timer:");
-            puts(10, 5 + i, GREEN,          BLACK, itoa(timers[i], 10, 10));
+            puts(0,  6 + i, BRIGHT | GREEN, BLACK, "timer:");
+            puts(10, 6 + i, GREEN,          BLACK, itoa(timers[i], 10, 10));
         }
     }
 
