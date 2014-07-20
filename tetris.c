@@ -33,7 +33,7 @@ static inline void outb(u16 p, u8 d)
  */
 noreturn reset(void)
 {
-    u8 one = 1, zero = 0;
+    volatile u8 one = 1, zero = 0;
     while (true)
         one /= zero;
 }
