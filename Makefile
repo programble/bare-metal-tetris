@@ -1,6 +1,7 @@
-CC = gcc
+TARGET = i386-elf
+CC = $(TARGET)-gcc
 ASM = nasm
-LD = ld
+LD = $(TARGET)-ld
 
 CFLAGS = -Wall -Wextra -Wunreachable-code -Wcast-qual -Wcast-align -Wswitch-enum -Wmissing-noreturn -Wwrite-strings -Wundef -Wpacked -Wredundant-decls -Winline -Wdisabled-optimization -m32 -nostdinc -ffreestanding -fno-builtin
 AFLAGS = -f elf
