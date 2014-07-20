@@ -679,8 +679,9 @@ noreturn main()
     itpms = tpms; while (tpms == itpms) tps();
     itpms = tpms; while (tpms == itpms) tps();
 
-    /* Initialize game state. */
-    shuffle(bag, BAG_SIZE);
+    /* Initialize game state. Shuffle bag of tetriminos until first tetrimino
+     * is not S or Z. */
+    do { shuffle(bag, BAG_SIZE); } while (bag[0] == 4 || bag[0] == 6);
     spawn();
     ghost();
     draw();
