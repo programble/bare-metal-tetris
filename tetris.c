@@ -1,3 +1,7 @@
+#define TETRIS_NAME    "Bare Metal Tetris"
+#define TETRIS_VERSION "0.0.0"
+#define TETRIS_URL     "https://github.com/programble/bare-metal-tetris"
+
 typedef unsigned char      u8;
 typedef signed   char      s8;
 typedef unsigned short     u16;
@@ -582,6 +586,34 @@ void drop(void)
     update();
 }
 
+#define TITLE_X (COLS / 2 - 9)
+#define TITLE_Y (ROWS / 2 - 1)
+
+/* Draw about information in the centre. Shown on boot and pause. */
+void draw_about(void) {
+    puts(TITLE_X,      TITLE_Y,     BLACK,            RED,     "   ");
+    puts(TITLE_X + 3,  TITLE_Y,     BLACK,            MAGENTA, "   ");
+    puts(TITLE_X + 6,  TITLE_Y,     BLACK,            BLUE,    "   ");
+    puts(TITLE_X + 9,  TITLE_Y,     BLACK,            GREEN,   "   ");
+    puts(TITLE_X + 12, TITLE_Y,     BLACK,            YELLOW,  "   ");
+    puts(TITLE_X + 15, TITLE_Y,     BLACK,            CYAN,    "   ");
+    puts(TITLE_X,      TITLE_Y + 1, BRIGHT | RED,     RED,     " T ");
+    puts(TITLE_X + 3,  TITLE_Y + 1, BRIGHT | MAGENTA, MAGENTA, " E ");
+    puts(TITLE_X + 6,  TITLE_Y + 1, BRIGHT | BLUE,    BLUE,    " T ");
+    puts(TITLE_X + 9,  TITLE_Y + 1, BRIGHT | GREEN,   GREEN,   " R ");
+    puts(TITLE_X + 12, TITLE_Y + 1, BRIGHT | YELLOW,  YELLOW,  " I ");
+    puts(TITLE_X + 15, TITLE_Y + 1, BRIGHT | CYAN,    CYAN,    " S ");
+    puts(TITLE_X,      TITLE_Y + 2, BLACK,            RED,     "   ");
+    puts(TITLE_X + 3,  TITLE_Y + 2, BLACK,            MAGENTA, "   ");
+    puts(TITLE_X + 6,  TITLE_Y + 2, BLACK,            BLUE,    "   ");
+    puts(TITLE_X + 9,  TITLE_Y + 2, BLACK,            GREEN,   "   ");
+    puts(TITLE_X + 12, TITLE_Y + 2, BLACK,            YELLOW,  "   ");
+    puts(TITLE_X + 15, TITLE_Y + 2, BLACK,            CYAN,    "   ");
+
+    puts(0, ROWS - 1, BRIGHT | BLACK, BLACK,
+         TETRIS_NAME " " TETRIS_VERSION " " TETRIS_URL);
+}
+
 #define WELL_X (COLS / 2 - WELL_WIDTH)
 
 #define PREVIEW_X (COLS * 3/4 + 1)
@@ -605,8 +637,10 @@ void draw(void)
 {
     u8 x, y;
 
-    if (paused)
+    if (paused) {
+        draw_about();
         goto status;
+    }
 
     /* Border */
     for (y = 2; y < WELL_HEIGHT; y++) {
@@ -672,6 +706,7 @@ status:
 noreturn main()
 {
     clear(BLACK);
+    draw_about();
 
     /* Wait a full second to calibrate timing. */
     u32 itpms;
@@ -684,6 +719,7 @@ noreturn main()
     do { shuffle(bag, BAG_SIZE); } while (bag[0] == 4 || bag[0] == 6);
     spawn();
     ghost();
+    clear(BLACK);
     draw();
 
     bool debug = false, help = true, statistics = false;
