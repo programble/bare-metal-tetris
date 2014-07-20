@@ -672,6 +672,13 @@ status:
 noreturn main()
 {
     clear(BLACK);
+
+    /* Wait a full second to calibrate timing. */
+    tps();
+    u32 itpms = tpms;
+    while (tpms == itpms) tps();
+
+    /* Initialize game state. */
     shuffle(bag, BAG_SIZE);
     spawn();
     ghost();
