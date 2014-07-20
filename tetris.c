@@ -674,9 +674,10 @@ noreturn main()
     clear(BLACK);
 
     /* Wait a full second to calibrate timing. */
+    u32 itpms;
     tps();
-    u32 itpms = tpms;
-    while (tpms == itpms) tps();
+    itpms = tpms; while (tpms == itpms) tps();
+    itpms = tpms; while (tpms == itpms) tps();
 
     /* Initialize game state. */
     shuffle(bag, BAG_SIZE);
