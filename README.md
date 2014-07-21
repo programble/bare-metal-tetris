@@ -14,8 +14,8 @@ Tetris for x86.
  - Soft & hard drop
  - Pause
  - Score and levels
+ - Increasing difficulty
  - Tetrimino statistics
- - _Coming soon:_ Increasing difficulty
 
 ## Technical Overview
 

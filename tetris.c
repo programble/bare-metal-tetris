@@ -18,6 +18,17 @@ typedef enum bool {
     true
 } bool;
 
+/* Simple math */
+
+/* A very simple and stupid exponentiation algorithm */
+static inline double pow(double a, double b)
+{
+    double result = 1;
+    while (b-- > 0)
+        result *= a;
+    return result;
+}
+
 /* Port I/O */
 
 static inline u8 inb(u16 p)
@@ -408,7 +419,7 @@ struct {
 #define BAG_SIZE (7)
 u8 bag[BAG_SIZE] = {0, 1, 2, 3, 4, 5, 6};
 
-u32 level = 1, score = 0;
+u32 score = 0, level = 1, speed = 1000;
 
 bool paused = false, game_over = false;
 
@@ -551,11 +562,15 @@ void update(void)
     case 4: score += 800 * level; break;
     }
 
-    /* Leveling: increase the level for every 10 rows cleared. */
+    /* Leveling: increase the level for every 10 rows cleared, increase game
+     * speed. */
     level_rows += rows;
     if (level_rows >= 10) {
         level++;
         level_rows -= 10;
+
+        double speed_s = pow(0.8 - (level - 1) * 0.007, level - 1);
+        speed = speed_s * 1000;
     }
 }
 
@@ -748,12 +763,13 @@ loop:
         putc(17, 4, GREEN,          BLACK, ',');
         puts(18, 4, GREEN,          BLACK, itoa(current.g, 10, 3));
         puts(0,  5, BRIGHT | GREEN, BLACK, "bag:");
-        for (i = 0; i < 7; i++) {
+        for (i = 0; i < 7; i++)
             puts(10 + i * 2, 5, GREEN, BLACK, itoa(bag[i], 10, 1));
-        }
+        puts(0,  6, BRIGHT | GREEN, BLACK, "speed:");
+        puts(10, 6, GREEN,          BLACK, itoa(speed, 10, 10));
         for (i = 0; i < TIMER__LENGTH; i++) {
-            puts(0,  6 + i, BRIGHT | GREEN, BLACK, "timer:");
-            puts(10, 6 + i, GREEN,          BLACK, itoa(timers[i], 10, 10));
+            puts(0,  7 + i, BRIGHT | GREEN, BLACK, "timer:");
+            puts(10, 7 + i, GREEN,          BLACK, itoa(timers[i], 10, 10));
         }
     }
 
@@ -843,7 +859,7 @@ loop:
         updated = true;
     }
 
-    if (!paused && !game_over && interval(TIMER_UPDATE, 1000)) {
+    if (!paused && !game_over && interval(TIMER_UPDATE, speed)) {
         update();
         updated = true;
     }
