@@ -18,12 +18,10 @@ tetris.o: tetris.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
 GENISOIMAGE = genisoimage
-ISOHYBRID = isohybrid
 STAGE2 = stage2_eltorito
 
 tetris.iso: iso/boot/tetris.elf iso/boot/grub/stage2_eltorito iso/boot/grub/menu.lst
 	$(GENISOIMAGE) -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table -o $@ iso
-	$(ISOHYBRID) $@
 
 iso/boot/tetris.elf: tetris.elf
 	@mkdir -p iso/boot

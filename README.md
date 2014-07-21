@@ -75,20 +75,15 @@ make tetris.iso
 ```
 
 A bootable ISO can be created using GRUB's `stage2_eltorito` (included
-in this repository) to boot the multiboot ELF file. `isohybrid` is
-applied to the ISO file, making it a bootable USB image as well.
+in this repository) to boot the multiboot ELF file.
 
 `genisoimage` is used to crate the ISO file. On systems without
 `genisoimage`, `mkisofs` from the `cdrtools` package can be used instead
 by passing `GENISOIMAGE=mkisofs` to `make`.
 
-On systems without `isohybrid`, the step can be skipped by passing
-`ISOHYBRID=touch` to `make`.
-
 The resulting `tetris.iso` file can then be booted with the QEMU
 emulator using `make qemu-iso`, attached to a virtual machine as a CD
-drive, burned to a CD or written to a USB stick and booted on real
-hardware.
+drive, or burned to a CD and booted on real hardware.
 
 ## License
 
