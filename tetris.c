@@ -1,5 +1,5 @@
 #define TETRIS_NAME    "Bare Metal Tetris"
-#define TETRIS_VERSION "0.0.0"
+#define TETRIS_VERSION "1.0.0"
 #define TETRIS_URL     "https://github.com/programble/bare-metal-tetris"
 
 typedef unsigned char      u8;
