@@ -58,6 +58,12 @@ compiler can be used by passing `CC=gcc LD=ld` to `make`.
 
 The build output is a multiboot ELF file `tetris.elf`.
 
+## Binaries
+
+Binary ELF files and ISO images can be found on the
+[releases](https://github.com/programble/bare-metal-tetris/releases)
+page.
+
 ## Running
 
 ### QEMU
