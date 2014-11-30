@@ -681,11 +681,12 @@ void draw(void)
                 puts(WELL_X + x * 2, y, BRIGHT, BLACK, "::");
 
     /* Ghost */
-    for (y = 0; y < 4; y++)
-        for (x = 0; x < 4; x++)
-            if (TETRIS[current.i][current.r][y][x])
-                puts(WELL_X + current.x * 2 + x * 2, current.g + y,
-                     TETRIS[current.i][current.r][y][x], BLACK, "::");
+    if (!game_over)
+        for (y = 0; y < 4; y++)
+            for (x = 0; x < 4; x++)
+                if (TETRIS[current.i][current.r][y][x])
+                    puts(WELL_X + current.x * 2 + x * 2, current.g + y,
+                        TETRIS[current.i][current.r][y][x], BLACK, "::");
 
     /* Current */
     for (y = 0; y < 4; y++)
