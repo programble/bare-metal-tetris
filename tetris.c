@@ -1,6 +1,4 @@
-#define TETRIS_NAME    "Bare Metal Tetris"
-#define TETRIS_VERSION "1.0.0"
-#define TETRIS_URL     "https://github.com/programble/bare-metal-tetris"
+#include "config.h"
 
 typedef unsigned char      u8;
 typedef signed   char      s8;
@@ -404,8 +402,6 @@ u8 TETRIS[7][4][4][4] = {
 };
 
 /* Two-dimensional array of color values */
-#define WELL_WIDTH (10)
-#define WELL_HEIGHT (22)
 u8 well[WELL_HEIGHT][WELL_WIDTH];
 
 struct {
@@ -419,7 +415,7 @@ struct {
 #define BAG_SIZE (7)
 u8 bag[BAG_SIZE] = {0, 1, 2, 3, 4, 5, 6};
 
-u32 score = 0, level = 1, speed = 1000;
+u32 score = 0, level = 1, speed = INITIAL_SPEED;
 
 bool paused = false, game_over = false;
 
@@ -503,7 +499,7 @@ bool rotate(void)
 void soft_drop(void)
 {
     if (move(0, 1))
-        score++;
+        score += SOFT_DROP_SCORE;
 }
 
 /* Lock the current tetrimino into the well. This is done by copying the color
@@ -556,18 +552,18 @@ void update(void)
 
     /* Scoring */
     switch (rows) {
-    case 1: score += 100 * level; break;
-    case 2: score += 300 * level; break;
-    case 3: score += 500 * level; break;
-    case 4: score += 800 * level; break;
+    case 1: score += SCORE_FACTOR_1 * level; break;
+    case 2: score += SCORE_FACTOR_2 * level; break;
+    case 3: score += SCORE_FACTOR_3 * level; break;
+    case 4: score += SCORE_FACTOR_4 * level; break;
     }
 
     /* Leveling: increase the level for every 10 rows cleared, increase game
      * speed. */
     level_rows += rows;
-    if (level_rows >= 10) {
+    if (level_rows >= ROWS_PER_LEVEL) {
         level++;
-        level_rows -= 10;
+        level_rows -= ROWS_PER_LEVEL;
 
         double speed_s = pow(0.8 - (level - 1) * 0.007, level - 1);
         speed = speed_s * 1000;
@@ -596,7 +592,7 @@ void drop(void)
     if (game_over)
         return;
 
-    score += 2 * (current.g - current.y);
+    score += HARD_DROP_SCORE_FACTOR * (current.g - current.y);
     current.y = current.g;
     update();
 }
@@ -865,7 +861,7 @@ loop:
         updated = true;
     }
 
-    if (cleared_rows[0] && wait(TIMER_CLEAR, 100)) {
+    if (cleared_rows[0] && wait(TIMER_CLEAR, CLEAR_DELAY)) {
         clear_rows();
         updated = true;
     }
