@@ -4,9 +4,9 @@ ASM = nasm
 LD = $(TARGET)-ld
 
 CWARNS = -Wall -Wextra -Wunreachable-code -Wcast-qual -Wcast-align -Wswitch-enum -Wmissing-noreturn -Wwrite-strings -Wundef -Wpacked -Wredundant-decls -Winline -Wdisabled-optimization
-CFLAGS = -m32 -nostdinc -ffreestanding -fno-builtin -Os $(CWARNS)
+CFLAGS = -nostdinc -ffreestanding -fno-builtin -Os $(CWARNS)
 AFLAGS = -f elf
-LFLAGS = -melf_i386 -nostdlib -T linker.ld
+LFLAGS = -nostdlib -T linker.ld
 
 tetris.elf: entry.o tetris.o
 	$(LD) $(LFLAGS) $^ -o $@
