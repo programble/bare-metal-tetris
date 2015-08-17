@@ -55,6 +55,6 @@ qemu-iso: tetris.iso
 
 
 clean:
-	rm -rf tetris.elf entry.o tetris.o iso
+	rm -rf tetris.elf entry.o tetris.o iso tetris.iso
 
 .PHONY: qemu qemu-iso clean
