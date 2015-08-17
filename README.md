@@ -2,6 +2,10 @@
 
 Tetris for x86.
 
+There is an improved version, in NASM, called [Tetrasm][tetrasm].
+
+[tetrasm]: https://github.com/programble/tetrasm
+
 ![QEMU screenshot](https://raw.githubusercontent.com/programble/bare-metal-tetris/master/screenshot.png)
 
 ## Features
